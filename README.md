@@ -59,21 +59,21 @@ A. Before the fork, the original process prints x = 100. After the fork, the chi
 #include <unistd.h>
 #include <sys/wait.h>
 
-int main(int argc, char *argv[]) {
+int main(void) {
 	int x = 100;
 
-	printf("hello (pid:%d)\n x = %d\n", (int) getpid(), x);
+	printf("Before fork (pid:%d)\n x = %d\n", (int) getpid(), x);
 	int rc = fork();
 	if (rc < 0) {
 		fprintf(stderr, "fork failed\n"); // fork failed
 		exit(1);
 	} else if (rc == 0) { // childs path
 		x = 200; // change childs copy
-		printf("child (pid:%d)\n x = %d\n", (int) getpid(), x); // child (new process)
+		printf("Child (pid:%d)\n x = %d\n", (int) getpid(), x); // child (new process)
 	} else { // parents path
 		x = 300; // change parents copy
 		int rc_wait = wait(NULL);
-		printf("parent of %d (pid:%d) \n x = %d\n",
+		printf("Parent of %d (pid:%d) \n x = %d\n",
 			rc_wait, (int) getpid(), x);
 	}
 
