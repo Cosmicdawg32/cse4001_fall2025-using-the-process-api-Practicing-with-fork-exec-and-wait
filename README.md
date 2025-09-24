@@ -52,9 +52,34 @@ Use the Linux in your CSE4001 container. If you are using macOS, you may use the
 
 
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
-```
+// p1
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
+int main(int argc, char *argv[]) {
+	int x = 100;
+
+	printf("hello (pid:%d)\n x = %d\n", (int) getpid(), x);
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n"); // fork failed
+		exit(1);
+	} else if (rc == 0) { // childs path
+		x = 200; // change childs copy
+		printf("child (pid:%d)\n x = %d\n", (int) getpid(), x); // child (new process)
+	} else { // parents path
+		x = 300; // change parents copy
+		int rc_wait = wait(NULL);
+		printf("parent of %d (pid:%d) \n x = %d\n",
+			rc_wait, (int) getpid(), x);
+	}
+
+	return 0;
+} 
+```
+![P1 Screenshot](p1_Solution.png)
 
 2. Write a program that opens a file (with the `open()` system call) and then calls `fork()` to create a new process. Can both the child and parent access the file descriptor returned by `open()`? What happens when they are writing to the file concurrently, i.e., at the same time?
 
