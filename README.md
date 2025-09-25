@@ -176,13 +176,55 @@ int main(void) {
 
 6. Write a slight modification of the previous program, this time using `waitpid()` instead of `wait()`. When would `waitpid()` be useful?
 
+A. After the fork is created, the parent calls waitpid() to wait for that specific child. This shows us that waitpid() is similar to wait(), but it lets the parent choose which specific child to wait for.
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p6
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	} else if (rc == 0) { // child path
+		printf("child is running\n");
+		exit(0);
+	} else { // parent path
+		int rc_wait = waitpid(rc, NULL, 0); // waits for child
+		printf("parent (pid:%d) waited for child (pid:%d)\n", (int)getpid(), rc_wait);
+	}
+	return 0;
+}  
 ```
 
 7. Write a program that creates a child process, and then in the child closes standard output (`STDOUT FILENO`). What happens if the child calls `printf()` to print some output after closing the descriptor?
 
+A. After the fork is created, the child closes STDOUT_FILENO before calling printf(). Nothing is printed to the console as a result of closing STDOUT_FILENO. This shows us that once the standard output is closed, the child's printed output no longer prints to the terminal.
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p7
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	} else if (rc == 0) { // child path
+		close(STDOUT_FILENO);
+		printf("Hello world!\n");
+		exit(0);
+	} else { // parent path
+		wait(NULL);
+	}
+	return 0;
+}  
 ```
 
