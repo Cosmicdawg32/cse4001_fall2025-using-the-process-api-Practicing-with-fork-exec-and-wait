@@ -149,8 +149,29 @@ int main(void) {
 
 5. Now write a program that uses `wait()` to wait for the child process to finish in the parent. What does `wait()` return? What happens if you use `wait()` in the child?
 
+A. After the fork is created, the parent calls wait(NULL) to pause until the child finishes. This shows us that wait() allows a parent to know when its child has completed its process, and which child it was. 
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p5
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	} else if (rc == 0) { // child path
+		printf("child is running\n");
+		exit(0);
+	} else { // parent path
+		int rc_wait = wait(NULL); // wait for the child to finish
+		printf("parent (pid:%d) waited for child (pid:%d)\n", (int)getpid(), rc_wait);
+	}
+	return 0;
+}
 ```
 
 6. Write a slight modification of the previous program, this time using `waitpid()` instead of `wait()`. When would `waitpid()` be useful?
