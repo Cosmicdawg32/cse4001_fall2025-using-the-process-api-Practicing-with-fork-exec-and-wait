@@ -50,46 +50,220 @@ Use the Linux in your CSE4001 container. If you are using macOS, you may use the
 ### Questions
 1. Write a program that calls `fork()`. Before calling `fork()`, have the main process access a variable (e.g., x) and set its value to something (e.g., 100). What value is the variable in the child process? What happens to the variable when both the child and parent change the value of x?
 
+A. Before the fork, the original process prints x = 100. After the fork, the child prints x = 200 and the parent prints x = 300. This shows us that each process has its own separate copy of x.
 
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
-```
+// p1
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
+int main(void) {
+	int x = 100;
+
+	printf("Before fork (pid:%d)\n x = %d\n", (int) getpid(), x);
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n"); // fork failed
+		exit(1);
+	} else if (rc == 0) { // childs path
+		x = 200; // change childs copy
+		printf("Child (pid:%d)\n x = %d\n", (int) getpid(), x); // child (new process)
+	} else { // parents path
+		x = 300; // change parents copy
+		int rc_wait = wait(NULL);
+		printf("Parent of %d (pid:%d) \n x = %d\n",
+			rc_wait, (int) getpid(), x);
+	}
+
+	return 0;
+} 
+```
+![P1 Screenshot](p1Solution.png)
 
 2. Write a program that opens a file (with the `open()` system call) and then calls `fork()` to create a new process. Can both the child and parent access the file descriptor returned by `open()`? What happens when they are writing to the file concurrently, i.e., at the same time?
 
+A. After the file is opened and the fork is created, both the parent and child write to the same file. When they both try to write at the same time, the lines from the parent and child can appear switched. This shows us that the order of the text in the file is unpredictable.
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p2
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int fd = open("p2.txt", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+	if (fd < 0) {
+		fprintf(stderr, "open failed\n");
+		exit(1);
+	}
+
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	} else if (rc == 0) { // child process
+		write(fd, "child\n", 6);
+		exit(0);
+	} else {	// parent process
+		write(fd, "parent\n", 7);
+		wait(NULL);
+	}
+	close(fd);
+	return 0;
+}
+
 ```
+![P2 Screenshot](p2Solution.png)
 
 3. Write another program using `fork()`.The child process should print “hello”; the parent process should print “goodbye”. You should try to ensure that the child process always prints first; can you do this without calling `wait()` in the parent?
 
+A. After the fork is created, the child immediately prints "hello". The parent waits one second before printing "goodbye". This shows us that sleep() can be used as a buffer between outputs without needing wait().
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p3
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	}
+
+	if (rc == 0) {
+		printf("hello\n");
+	} else {
+		sleep(1);
+		printf("goodbye\n");
+	}
+	return 0;
+}
 ```
 
+![P3 Screenshot](p3Solution.png)
 
 4. Write a program that calls `fork()` and then calls some form of `exec()` to run the program `/bin/ls`. See if you can try all of the variants of `exec()`, including (on Linux) `execl()`, `execle()`, `execlp()`, `execv()`, `execvp()`, and `execvpe()`. Why do you think there are so many variants of the same basic call?
 
+A. After the fork is created, the child calls execv() to replace itself with the /bin/ls program. There are so many variants of exec because different programs need different ways to pass arguments.
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p4.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	}
+
+	if (rc == 0) { // child replaces itself with /bin/ls
+		char *argv[] = {"ls", NULL};
+		execv("/bin/ls", argv);
+		fprintf(stderr, "execv failed\n"); // prints if execv fails
+		exit(1);
+	} else { // parent: waits for child
+		wait(NULL);
+	}
+	return 0;
+} 
 ```
+
+![P4 Screenshot](p4Solution.png)
 
 5. Now write a program that uses `wait()` to wait for the child process to finish in the parent. What does `wait()` return? What happens if you use `wait()` in the child?
 
+A. After the fork is created, the parent calls wait(NULL) to pause until the child finishes. This shows us that wait() allows a parent to know when its child has completed its process, and which child it was. 
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p5
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	} else if (rc == 0) { // child path
+		printf("child is running\n");
+		exit(0);
+	} else { // parent path
+		int rc_wait = wait(NULL); // wait for the child to finish
+		printf("parent (pid:%d) waited for child (pid:%d)\n", (int)getpid(), rc_wait);
+	}
+	return 0;
+}
 ```
+
+![P5 Screenshot](p5Solution.png)
 
 6. Write a slight modification of the previous program, this time using `waitpid()` instead of `wait()`. When would `waitpid()` be useful?
 
+A. After the fork is created, the parent calls waitpid() to wait for that specific child. This shows us that waitpid() is similar to wait(), but it lets the parent choose which specific child to wait for.
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p6
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	} else if (rc == 0) { // child path
+		printf("child is running\n");
+		exit(0);
+	} else { // parent path
+		int rc_wait = waitpid(rc, NULL, 0); // waits for child
+		printf("parent (pid:%d) waited for child (pid:%d)\n", (int)getpid(), rc_wait);
+	}
+	return 0;
+}  
 ```
+
+![P6 Screenshot](p6Solution.png)
 
 7. Write a program that creates a child process, and then in the child closes standard output (`STDOUT FILENO`). What happens if the child calls `printf()` to print some output after closing the descriptor?
 
+A. After the fork is created, the child closes STDOUT_FILENO before calling printf(). Nothing is printed to the console as a result of closing STDOUT_FILENO. This shows us that once the standard output is closed, the child's printed output no longer prints to the terminal.
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p7
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	} else if (rc == 0) { // child path
+		close(STDOUT_FILENO);
+		printf("Hello world!\n");
+		exit(0);
+	} else { // parent path
+		wait(NULL);
+	}
+	return 0;
+}  
 ```
 
+![P7 Screenshot](p7Solution.png)
