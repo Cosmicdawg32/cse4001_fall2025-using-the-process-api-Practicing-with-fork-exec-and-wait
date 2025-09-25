@@ -85,13 +85,35 @@ int main(void) {
 2. Write a program that opens a file (with the `open()` system call) and then calls `fork()` to create a new process. Can both the child and parent access the file descriptor returned by `open()`? What happens when they are writing to the file concurrently, i.e., at the same time?
 
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p2
+
 ```
 
 3. Write another program using `fork()`.The child process should print “hello”; the parent process should print “goodbye”. You should try to ensure that the child process always prints first; can you do this without calling `wait()` in the parent?
 
+A. After the fork is created, the child immediately prints "hello". The parent waits one second before printing "goodbye". This shows us that sleep() can be used as a buffer between outputs without needing wait().
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p3
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	}
+
+	if (rc == 0) {
+		printf("hello\n");
+	} else {
+		sleep(1);
+		printf("goodbye\n");
+	}
+	return 0;
+}
 ```
 
 
