@@ -119,8 +119,32 @@ int main(void) {
 
 4. Write a program that calls `fork()` and then calls some form of `exec()` to run the program `/bin/ls`. See if you can try all of the variants of `exec()`, including (on Linux) `execl()`, `execle()`, `execlp()`, `execv()`, `execvp()`, and `execvpe()`. Why do you think there are so many variants of the same basic call?
 
+A. After the fork is created, the child calls execv() to replace itself with the /bin/ls program. There are so many variants of exec because different programs need different ways to pass arguments.
+
 ```cpp
-// Add your code or answer here. You can also add screenshots showing your program's execution.  
+// p4.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) {
+	int rc = fork();
+	if (rc < 0) {
+		fprintf(stderr, "fork failed\n");
+		exit(1);
+	}
+
+	if (rc == 0) { // child replaces itself with /bin/ls
+		char *argv[] = {"ls", NULL};
+		execv("/bin/ls", argv);
+		fprintf(stderr, "execv failed\n"); // prints if execv fails
+		exit(1);
+	} else { // parent: waits for child
+		wait(NULL);
+	}
+	return 0;
+} 
 ```
 
 5. Now write a program that uses `wait()` to wait for the child process to finish in the parent. What does `wait()` return? What happens if you use `wait()` in the child?
